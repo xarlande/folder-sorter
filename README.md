@@ -1,5 +1,84 @@
 # Folder Sorter
 
+A simple Rust utility for automatically sorting files into categories (Images, Videos, Documents, etc.) based on their extensions.
+
+---
+
+[🇺🇦 Українська версія](#українська)
+
+## Features
+
+- **Automatic Sorting**: Organizes files into subfolders based on their extensions.
+- **Flexible Configuration**: Customize categories and extensions via a TOML file.
+- **Dry Run Mode**: Preview planned changes without actually moving files.
+- **Duplicate Handling**: Automatically adds an index to the filename if a file with the same name already exists in the destination folder.
+
+## Installation
+
+You need [Rust](https://www.rust-lang.org/) installed to build the project.
+
+```bash
+# Clone the repository and run:
+cargo install --path .
+```
+
+Ensure `~/.cargo/bin` is added to your `PATH` environment variable.
+
+## Usage
+
+```bash
+folder-sorter --path <DIRECTORY_PATH> [OPTIONS]
+```
+
+### Parameters
+
+- `-p, --path <PATH>` — Path to the directory you want to organize.
+- `-o, --output <OUTPUT>` — (Optional) Path to the directory where sorted files will be moved. Defaults to the source path.
+- `-d, --dry-run` — Run in preview mode (files will not be moved).
+- `-V, --version` — Show program version.
+- `-h, --help` — Show help message.
+
+### Examples
+
+```bash
+# Check what will be done in the Downloads folder
+folder-sorter --path ~/Downloads --dry-run
+
+# Organize files in the Downloads folder
+folder-sorter --path ~/Downloads
+
+# Using cargo run (development)
+cargo run -- --path . --dry-run
+```
+
+## Configuration
+
+On the first run, the program creates a `cleaner_config.toml` file in the current directory. You can edit it to add your own categories or extensions.
+
+Default categories:
+
+- **Images (Зображення)**: jpg, png, jpeg, gif, svg
+- **Video (Відео)**: mp4, mkv, mov, avi
+- **Music (Музика)**: mp3, wav, flac
+- **Documents (Документи)**: pdf, doc, docx, txt
+- **Archives (Архіви)**: zip, rar, 7z, tar
+- **Apps (Програми)**: exe, msi, deb
+- **Other (Інше)**: All other file types
+
+Example `cleaner_config.toml`:
+
+```toml
+[rules]
+"Images" = ["jpg", "png", "jpeg", "gif", "svg"]
+"Documents" = ["pdf", "doc", "docx", "txt"]
+"Projects" = ["rs", "py", "js", "cpp"]
+```
+
+---
+
+<a name="українська"></a>
+# Folder Sorter (Українська)
+
 Проста утиліта на Rust для автоматичного сортування файлів за категоріями (Зображення, Відео, Документи тощо) на основі їхніх розширень.
 
 ## Особливості
@@ -11,14 +90,9 @@
 
 ## Встановлення
 
-Для збірки та встановлення вам знадобиться [Rust](https://www.rust-lang.org/).
-
 ```bash
-# Клонуйте репозиторій (або перейдіть у папку з проектом)
 cargo install --path .
 ```
-
-Переконайтеся, що `~/.cargo/bin` додано до вашої змінної оточення `PATH`.
 
 ## Використання
 
@@ -26,49 +100,11 @@ cargo install --path .
 folder-sorter --path <ШЛЯХ_ДО_ПАПКИ> [ОПЦІЇ]
 ```
 
-### Параметри
-
-- `-p, --path <PATH>` — Шлях до папки, яку потрібно впорядкувати.
-- `-o, --output <OUTPUT>` — (Опціонально) Шлях до папки, куди будуть переміщені відсортовані файли. За замовчуванням — та ж сама папка.
-- `-d, --dry-run` — Запустити в режимі перевірки (файли не будуть переміщені).
-- `-V, --version` — Показати версію програми.
-- `-h, --help` — Показати довідку.
-
-### Приклади
-
+Приклад з `cargo run`:
 ```bash
-# Перевірити, що буде зроблено в папці Downloads
-folder-sorter --path ~/Downloads --dry-run
-
-# Впорядкувати файли в папці Downloads
-folder-sorter --path ~/Downloads
-
-# Впорядкувати файли з Downloads у нову папку Organized
-folder-sorter --path ~/Downloads --output ~/Organized
+cargo run -- --path . --dry-run
 ```
 
-## Конфігурація
-
-При першому запуску програма створює файл `cleaner_config.toml` у поточній директорії. Ви можете редагувати його для додавання власних категорій або розширень.
-
-Стандартні категорії та розширення:
-
-- **Зображення**: jpg, png, jpeg, gif, svg
-- **Відео**: mp4, mkv, mov, avi
-- **Музика**: mp3, wav, flac
-- **Документи**: pdf, doc, docx, txt
-- **Архіви**: zip, rar, 7z, tar
-- **Програми**: exe, msi, deb
-- **Інше**: Всі інші типи файлів
-
-Приклад файлу `cleaner_config.toml`:
-
-```toml
-[rules]
-"Зображення" = ["jpg", "png", "jpeg", "gif", "svg"]
-"Проекти" = ["rs", "py", "js", "cpp"]
-```
-
-## Ліцензія
+## Ліцензія / License
 
 MIT
