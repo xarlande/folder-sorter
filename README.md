@@ -4,7 +4,7 @@ A simple Rust utility for automatically sorting files into categories (Images, V
 
 ---
 
-[🇺🇦 Українська версія](#українська)
+[🇺🇦 Українська версія](README_UA.md)
 
 ## Features
 
@@ -57,13 +57,13 @@ On the first run, the program creates a `cleaner_config.toml` file in the curren
 
 Default categories:
 
-- **Images (Зображення)**: jpg, png, jpeg, gif, svg
-- **Video (Відео)**: mp4, mkv, mov, avi
-- **Music (Музика)**: mp3, wav, flac
-- **Documents (Документи)**: pdf, doc, docx, txt
-- **Archives (Архіви)**: zip, rar, 7z, tar
-- **Apps (Програми)**: exe, msi, deb
-- **Other (Інше)**: All other file types
+- **Images**: jpg, png, jpeg, gif, svg
+- **Video**: mp4, mkv, mov, avi
+- **Music**: mp3, wav, flac
+- **Documents**: pdf, doc, docx, txt
+- **Archives**: zip, rar, 7z, tar
+- **Apps**: exe, msi, deb
+- **Other**: All other file types
 
 Example `cleaner_config.toml`:
 
@@ -74,37 +74,6 @@ Example `cleaner_config.toml`:
 "Projects" = ["rs", "py", "js", "cpp"]
 ```
 
----
-
-<a name="українська"></a>
-# Folder Sorter (Українська)
-
-Проста утиліта на Rust для автоматичного сортування файлів за категоріями (Зображення, Відео, Документи тощо) на основі їхніх розширень.
-
-## Особливості
-
-- **Автоматичне сортування**: Розподіляє файли у підпапки відповідно до розширень.
-- **Гнучка конфігурація**: Налаштування категорій та розширень через TOML файл.
-- **Режим перевірки (Dry Run)**: Можливість побачити заплановані зміни без фактичного переміщення файлів.
-- **Обробка дублікатів**: Автоматично додає індекс до імені файлу, якщо файл з такою назвою вже існує в цільовій папці.
-
-## Встановлення
-
-```bash
-cargo install --path .
-```
-
-## Використання
-
-```bash
-folder-sorter --path <ШЛЯХ_ДО_ПАПКИ> [ОПЦІЇ]
-```
-
-Приклад з `cargo run`:
-```bash
-cargo run -- --path . --dry-run
-```
-
-## Ліцензія / License
+## License
 
 MIT
