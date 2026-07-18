@@ -18,6 +18,35 @@ DEFAULT_RULES = {
     "Програми": ["exe", "msi", "deb"]
 }
 
+# Configuration intervals for schedulers
+INTERVALS = {
+    "Кожні 15 хвилин": {
+        "macos_seconds": 900,
+        "windows_minutes": 15,
+        "linux_cron": "*/15 * * * *"
+    },
+    "Кожні 30 хвилин": {
+        "macos_seconds": 1800,
+        "windows_minutes": 30,
+        "linux_cron": "*/30 * * * *"
+    },
+    "Кожну годину": {
+        "macos_seconds": 3600,
+        "windows_minutes": 60,
+        "linux_cron": "0 * * * *"
+    },
+    "Кожні 12 годин": {
+        "macos_seconds": 43200,
+        "windows_minutes": 720,
+        "linux_cron": "0 */12 * * *"
+    },
+    "Щодня (о 12:00)": {
+        "macos_seconds": 86400,
+        "windows_minutes": 1440,
+        "linux_cron": "0 12 * * *"
+    }
+}
+
 def load_rules(config_path):
     """Loads configuration rules from TOML config file."""
     if os.path.exists(config_path):
@@ -32,7 +61,6 @@ def load_rules(config_path):
 def save_rules(config_path, rules):
     """Saves rules to TOML config file in the correct format."""
     try:
-        # Ensure parent directories exist
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w", encoding="utf-8") as f:
             f.write("[rules]\n")
@@ -268,6 +296,372 @@ class RulesTab(tk.Frame):
         else:
             messagebox.showerror("Помилка", "Не вдалося зберегти конфігурацію.")
 
+class SchedulerTab(tk.Frame):
+    """Tab 3: Configure platform-specific background scheduler."""
+    def __init__(self, parent, app):
+        super().__init__(parent, bg="#1e1e2e")
+        self.app = app
+        self.system = platform.system()
+        
+        # Info Header
+        info_lbl = tk.Label(
+            self,
+            text="⏰ Налаштування автоматичного сортування за розкладом",
+            bg="#1e1e2e",
+            fg="#cba6f7",
+            font=("Helvetica", 12, "bold"),
+            pady=15
+        )
+        info_lbl.pack(fill="x")
+        
+        # Scheduler Status Card
+        status_card = tk.Frame(self, bg="#252538", pady=15, padx=20)
+        status_card.pack(fill="x", padx=20, pady=10)
+        
+        status_title = tk.Label(status_card, text="Поточний статус планувальника:", bg="#252538", fg="#a6adc8", font=("Helvetica", 10, "bold"))
+        status_title.pack(side="left")
+        
+        self.status_lbl = tk.Label(status_card, text="ВИМКНЕНИЙ 🔴", bg="#252538", fg="#f38ba8", font=("Helvetica", 11, "bold"), padx=10)
+        self.status_lbl.pack(side="left")
+        
+        # Scheduler Name description
+        self.status_desc_lbl = tk.Label(
+            self, 
+            text=f"Використовується системний планувальник: {self.get_system_scheduler_name()}",
+            bg="#1e1e2e",
+            fg="#7f849c",
+            font=("Helvetica", 9, "italic")
+        )
+        self.status_desc_lbl.pack(fill="x", padx=20, pady=(0, 15))
+        
+        # Configuration Settings Card
+        settings_card = tk.Frame(self, bg="#252538", pady=15, padx=20)
+        settings_card.pack(fill="x", padx=20, pady=5)
+        
+        # Interval selection
+        int_frame = tk.Frame(settings_card, bg="#252538")
+        int_frame.pack(fill="x", pady=5)
+        
+        int_lbl = tk.Label(int_frame, text="Інтервал виконання:", bg="#252538", fg="#cdd6f4", font=("Helvetica", 10, "bold"), width=20, anchor="w")
+        int_lbl.pack(side="left")
+        
+        self.interval_var = tk.StringVar(value="Кожну годину")
+        self.interval_menu = ttk.Combobox(
+            int_frame,
+            textvariable=self.interval_var,
+            values=list(INTERVALS.keys()),
+            state="readonly",
+            width=20
+        )
+        self.interval_menu.pack(side="left", padx=10)
+        
+        # Prefill explanation
+        prefill_lbl = tk.Label(
+            settings_card, 
+            text="*Планувальник автоматично використовуватиме шляхи та режим 'Dry Run', налаштовані на першій вкладці.",
+            bg="#252538",
+            fg="#a6adc8",
+            font=("Helvetica", 9, "italic"),
+            pady=10
+        )
+        prefill_lbl.pack(fill="x", anchor="w")
+        
+        # Control Buttons
+        btn_frame = tk.Frame(self, bg="#1e1e2e", pady=20)
+        btn_frame.pack(fill="x", padx=20)
+        
+        self.enable_btn = CustomButton(
+            btn_frame, "💾 Увімкнути планувальник", self.enable_schedule,
+            bg_color="#a6e3a1", hover_color="#94e2d5", fg_color="#1e1e2e"
+        )
+        self.enable_btn.pack(side="left", padx=5)
+        
+        self.disable_btn = CustomButton(
+            btn_frame, "❌ Вимкнути планувальник", self.disable_schedule,
+            bg_color="#f38ba8", hover_color="#f5c2e7", fg_color="#1e1e2e"
+        )
+        self.disable_btn.pack(side="left", padx=5)
+        
+        # Load initial status
+        self.update_status()
+
+    def get_system_scheduler_name(self):
+        if self.system == "Darwin":
+            return "launchd (macOS LaunchAgents)"
+        elif self.system == "Windows":
+            return "Task Scheduler (Windows schtasks)"
+        else:
+            return "cron (Linux crontab)"
+
+    def is_scheduler_active(self):
+        if self.system == "Darwin":
+            plist_path = os.path.expanduser("~/Library/LaunchAgents/com.user.foldersorter.plist")
+            if not os.path.exists(plist_path):
+                return False
+            try:
+                res = subprocess.run(["launchctl", "list"], capture_output=True, text=True)
+                return "com.user.foldersorter" in res.stdout
+            except Exception:
+                return False
+                
+        elif self.system == "Windows":
+            try:
+                res = subprocess.run(["schtasks", "/query", "/tn", "FolderSorterTask"], capture_output=True, text=True)
+                return res.returncode == 0
+            except Exception:
+                return False
+                
+        else: # Linux / Unix
+            try:
+                res = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+                if res.returncode != 0:
+                    return False
+                return "# FOLDER-SORTER-TASK" in res.stdout
+            except Exception:
+                return False
+
+    def update_status(self):
+        active = self.is_scheduler_active()
+        if active:
+            self.status_lbl.configure(text="АКТИВНИЙ 🟢", fg="#a6e3a1")
+        else:
+            self.status_lbl.configure(text="ВИМКНЕНИЙ 🔴", fg="#f38ba8")
+
+    def enable_schedule(self):
+        bin_path = self.app.get_cli_path()
+        if not bin_path:
+            messagebox.showwarning("Помилка", "Не знайдено бінарний файл CLI. Спробуйте запустити сортування хоча б один раз на першій вкладці для автоматичної компіляції CLI.")
+            return
+            
+        src_path = self.app.src_entry.get().strip()
+        if not src_path:
+            messagebox.showwarning("Попередження", "Вкажіть шлях до вихідної папки на першій вкладці!")
+            return
+            
+        use_target = self.app.use_target_var.get()
+        dest_path = self.app.dest_entry.get().strip() if use_target else ""
+        dry_run = self.app.dry_run_var.get()
+        
+        interval_key = self.interval_var.get()
+        interval_data = INTERVALS[interval_key]
+        
+        success = False
+        message = ""
+        
+        if self.system == "Darwin": # macOS launchd
+            seconds = interval_data["macos_seconds"]
+            success, message = self.setup_launchd(bin_path, src_path, dest_path, dry_run, seconds)
+        elif self.system == "Windows": # Windows schtasks
+            minutes = interval_data["windows_minutes"]
+            success, message = self.setup_schtasks(bin_path, src_path, dest_path, dry_run, minutes)
+        else: # Linux cron
+            cron_expr = interval_data["linux_cron"]
+            success, message = self.setup_cron(bin_path, src_path, dest_path, dry_run, cron_expr)
+            
+        self.update_status()
+        if success:
+            messagebox.showinfo("Планувальник", f"Планувальник успішно активовано!\n\nДеталі: {message}")
+        else:
+            messagebox.showerror("Помилка", f"Не вдалося активувати планувальник:\n\n{message}")
+
+    def disable_schedule(self):
+        success = False
+        message = ""
+        
+        if self.system == "Darwin":
+            success, message = self.remove_launchd()
+        elif self.system == "Windows":
+            success, message = self.remove_schtasks()
+        else:
+            success, message = self.remove_cron()
+            
+        self.update_status()
+        if success:
+            messagebox.showinfo("Планувальник", f"Планувальник вимкнено.\n\nДеталі: {message}")
+        else:
+            messagebox.showerror("Помилка", f"Не вдалося вимкнути планувальник:\n\n{message}")
+
+    # macOS launchd Implementation
+    def setup_launchd(self, bin_path, src_path, dest_path, dry_run, seconds):
+        plist_path = os.path.expanduser("~/Library/LaunchAgents/com.user.foldersorter.plist")
+        os.makedirs(os.path.dirname(plist_path), exist_ok=True)
+        
+        args = [bin_path, "-p", src_path]
+        if dest_path:
+            args.extend(["-o", dest_path])
+        if dry_run:
+            args.append("-d")
+            
+        args_xml = "".join(f"        <string>{arg}</string>\n" for arg in args)
+        
+        plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.foldersorter</string>
+    <key>ProgramArguments</key>
+    <array>
+{args_xml}    </array>
+    <key>StartInterval</key>
+    <integer>{seconds}</integer>
+    <key>WorkingDirectory</key>
+    <string>{self.app.cli_dir}</string>
+    <key>StandardOutPath</key>
+    <string>/tmp/foldersorter.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/foldersorter.err.log</string>
+</dict>
+</plist>
+"""
+        try:
+            with open(plist_path, "w", encoding="utf-8") as f:
+                f.write(plist_content)
+            
+            # Unload if already loaded to avoid error
+            subprocess.run(["launchctl", "unload", plist_path], capture_output=True)
+            res = subprocess.run(["launchctl", "load", plist_path], capture_output=True, text=True)
+            
+            if res.returncode == 0:
+                return True, "Агент завантажено в launchd."
+            else:
+                return False, f"Помилка launchctl: {res.stderr.strip()}"
+        except Exception as e:
+            return False, f"Помилка створення файлу: {str(e)}"
+
+    def remove_launchd(self):
+        plist_path = os.path.expanduser("~/Library/LaunchAgents/com.user.foldersorter.plist")
+        if not os.path.exists(plist_path):
+            return True, "Агент вже вимкнений (файл конфігурації відсутній)."
+            
+        res = subprocess.run(["launchctl", "unload", plist_path], capture_output=True, text=True)
+        try:
+            os.remove(plist_path)
+        except Exception:
+            pass
+        return True, "Файл агента вивантажено та видалено."
+
+    # Windows Task Scheduler Implementation
+    def setup_schtasks(self, bin_path, src_path, dest_path, dry_run, minutes):
+        cmd_args = f'"{bin_path}" -p "{src_path}"'
+        if dest_path:
+            cmd_args += f' -o "{dest_path}"'
+        if dry_run:
+            cmd_args += ' -d'
+            
+        # Use appropriate schedule type based on minutes
+        if minutes == 1440: # 1 Day
+            cmd = [
+                "schtasks", "/create",
+                "/tn", "FolderSorterTask",
+                "/tr", cmd_args,
+                "/sc", "DAILY",
+                "/st", "12:00",
+                "/f"
+            ]
+        elif minutes == 720: # 12 Hours
+            cmd = [
+                "schtasks", "/create",
+                "/tn", "FolderSorterTask",
+                "/tr", cmd_args,
+                "/sc", "HOURLY",
+                "/mo", "12",
+                "/f"
+            ]
+        else: # Minutes (15, 30, 60)
+            cmd = [
+                "schtasks", "/create",
+                "/tn", "FolderSorterTask",
+                "/tr", cmd_args,
+                "/sc", "MINUTE",
+                "/mo", str(minutes),
+                "/f"
+            ]
+            
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Завдання створено в Task Scheduler."
+            else:
+                return False, f"schtasks помилка: {res.stderr.strip()}"
+        except Exception as e:
+            return False, f"Помилка створення завдання: {str(e)}"
+
+    def remove_schtasks(self):
+        cmd = ["schtasks", "/delete", "/tn", "FolderSorterTask", "/f"]
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Завдання видалено з Task Scheduler."
+            else:
+                # If task wasn't found, treat as success
+                if "не знайдено" in res.stderr.lower() or "not found" in res.stderr.lower():
+                    return True, "Завдання вже було вилучено."
+                return False, f"schtasks помилка: {res.stderr.strip()}"
+        except Exception as e:
+            return False, f"Помилка видалення завдання: {str(e)}"
+
+    # Linux crontab Implementation
+    def setup_cron(self, bin_path, src_path, dest_path, dry_run, cron_expr):
+        args = [f'"{bin_path}"', "-p", f'"{src_path}"']
+        if dest_path:
+            args.extend(["-o", f'"{dest_path}"'])
+        if dry_run:
+            args.append("-d")
+            
+        cmd_str = " ".join(args)
+        # Suffix comment to uniquely identify our rule
+        cron_line = f"{cron_expr} cd {self.app.cli_dir} && {cmd_str} # FOLDER-SORTER-TASK\n"
+        
+        try:
+            res = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+            lines = []
+            if res.returncode == 0:
+                lines = res.stdout.splitlines()
+                
+            # Filter out existing lines
+            lines = [line for line in lines if "# FOLDER-SORTER-TASK" not in line]
+            lines.append(cron_line.strip())
+            
+            new_cron_content = "\n".join(lines) + "\n"
+            
+            proc = subprocess.Popen(["crontab", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            out, err = proc.communicate(input=new_cron_content)
+            
+            if proc.returncode == 0:
+                return True, "Завдання додано в crontab."
+            else:
+                return False, f"crontab помилка: {err.strip()}"
+        except Exception as e:
+            return False, f"Помилка crontab: {str(e)}"
+
+    def remove_cron(self):
+        try:
+            res = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+            if res.returncode != 0:
+                return True, "crontab порожній або відсутній."
+                
+            lines = res.stdout.splitlines()
+            filtered = [line for line in lines if "# FOLDER-SORTER-TASK" not in line]
+            
+            if len(filtered) == len(lines):
+                return True, "Завдання не знайдено в crontab."
+                
+            if not filtered or (len(filtered) == 1 and not filtered[0].strip()):
+                # If empty, delete crontab completely
+                subprocess.run(["crontab", "-r"], capture_output=True)
+                return True, "crontab очищено."
+            else:
+                new_cron_content = "\n".join(filtered) + "\n"
+                proc = subprocess.Popen(["crontab", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                out, err = proc.communicate(input=new_cron_content)
+                if proc.returncode == 0:
+                    return True, "Завдання видалено з crontab."
+                else:
+                    return False, f"crontab помилка: {err.strip()}"
+        except Exception as e:
+            return False, f"Помилка crontab: {str(e)}"
+
 class Application(tk.Tk):
     """Main Application GUI Window."""
     def __init__(self):
@@ -334,6 +728,18 @@ class Application(tk.Tk):
         # TAB 2: Rules Settings
         self.rules_tab = RulesTab(self.notebook, self.config_path)
         self.notebook.add(self.rules_tab, text=" Налаштування правил ")
+
+        # TAB 3: Scheduler settings
+        self.scheduler_tab = SchedulerTab(self.notebook, self)
+        self.notebook.add(self.scheduler_tab, text=" Планувальник ")
+
+        # Update scheduler tab status when user changes tabs
+        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
+
+    def on_tab_changed(self, event):
+        selected_tab = self.notebook.index(self.notebook.select())
+        if selected_tab == 2: # Scheduler tab index
+            self.scheduler_tab.update_status()
 
     def build_sorter_tab(self):
         # Main Panel
