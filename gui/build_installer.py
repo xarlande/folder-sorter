@@ -89,10 +89,18 @@ def main():
         elif platform.system() == "Darwin":
             app_path = os.path.join(dist_dir, "FolderSorter.app")
             print(f"macOS App Bundle is located at: {app_path}")
-            # Archive the .app directory
+            # Archive the .app directory using native zip to preserve Mach-O bundle structures and executable bits
             zip_path = os.path.join(dist_dir, "FolderSorter-macOS")
-            shutil.make_archive(zip_path, 'zip', root_dir=dist_dir, base_dir="FolderSorter.app")
-            print(f"Archived to: {zip_path}.zip")
+            try:
+                target_zip = f"{zip_path}.zip"
+                if os.path.exists(target_zip):
+                    os.remove(target_zip)
+                subprocess.check_call(["zip", "-ry", "FolderSorter-macOS.zip", "FolderSorter.app"], cwd=dist_dir)
+                print(f"Archived to: {target_zip} using native zip")
+            except Exception as e:
+                print(f"Native zip failed ({e}), falling back to shutil...")
+                shutil.make_archive(zip_path, 'zip', root_dir=dist_dir, base_dir="FolderSorter.app")
+                print(f"Archived to: {zip_path}.zip")
         else:
             app_dir = os.path.join(dist_dir, "FolderSorter")
             app_path = os.path.join(app_dir, "FolderSorter")
