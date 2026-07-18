@@ -79,11 +79,12 @@ def main():
         
         dist_dir = os.path.join(script_dir, "dist")
         if is_windows:
-            app_path = os.path.join(dist_dir, "FolderSorter.exe")
+            app_dir = os.path.join(dist_dir, "FolderSorter")
+            app_path = os.path.join(app_dir, "FolderSorter.exe")
             print(f"Executable is located at: {app_path}")
-            # Archive it
+            # Archive the directory containing the exe and libraries
             zip_path = os.path.join(dist_dir, "FolderSorter-Windows")
-            shutil.make_archive(zip_path, 'zip', root_dir=dist_dir, base_dir="FolderSorter.exe")
+            shutil.make_archive(zip_path, 'zip', root_dir=dist_dir, base_dir="FolderSorter")
             print(f"Archived to: {zip_path}.zip")
         elif platform.system() == "Darwin":
             app_path = os.path.join(dist_dir, "FolderSorter.app")
@@ -93,13 +94,14 @@ def main():
             shutil.make_archive(zip_path, 'zip', root_dir=dist_dir, base_dir="FolderSorter.app")
             print(f"Archived to: {zip_path}.zip")
         else:
-            app_path = os.path.join(dist_dir, "FolderSorter")
+            app_dir = os.path.join(dist_dir, "FolderSorter")
+            app_path = os.path.join(app_dir, "FolderSorter")
             print(f"Linux binary is located at: {app_path}")
-            # Archive it
+            # Archive the directory containing the binary and libraries
             tar_path = os.path.join(dist_dir, "FolderSorter-Linux.tar.gz")
             import tarfile
             with tarfile.open(tar_path, "w:gz") as tar:
-                tar.add(app_path, arcname="FolderSorter")
+                tar.add(app_dir, arcname="FolderSorter")
             print(f"Archived to: {tar_path}")
             
     except Exception as e:
