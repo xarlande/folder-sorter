@@ -36,16 +36,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install macOS GUI Dependencies (Tcl/Tk)
-        if: matrix.os == 'macos-latest'
-        run: brew install tcl-tk
-
-      - name: Install Linux GUI Dependencies (Tkinter)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-tk
-
       - name: Install dependencies and build Standalone App
         run: |
           cd gui
