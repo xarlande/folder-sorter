@@ -41,6 +41,8 @@ jobs:
           cd gui
           uv add pyinstaller
           uv run build_installer.py
+        env:
+          VIRTUAL_ENV: ""
         shell: bash
 
       - name: Upload Build Artifact
