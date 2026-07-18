@@ -47,6 +47,12 @@ INTERVALS = {
     }
 }
 
+def get_config_dir():
+    """Gets the global configuration directory for the user (~/.foldersorter)."""
+    config_dir = os.path.expanduser("~/.foldersorter")
+    os.makedirs(config_dir, exist_ok=True)
+    return config_dir
+
 def load_rules(config_path):
     """Loads configuration rules from TOML config file."""
     if os.path.exists(config_path):
@@ -506,7 +512,7 @@ class SchedulerTab(tk.Frame):
     <key>StartInterval</key>
     <integer>{seconds}</integer>
     <key>WorkingDirectory</key>
-    <string>{self.app.cli_dir}</string>
+    <string>{get_config_dir()}</string>
     <key>StandardOutPath</key>
     <string>/tmp/foldersorter.out.log</string>
     <key>StandardErrorPath</key>
@@ -543,11 +549,13 @@ class SchedulerTab(tk.Frame):
 
     # Windows Task Scheduler Implementation
     def setup_schtasks(self, bin_path, src_path, dest_path, dry_run, minutes):
-        cmd_args = f'"{bin_path}" -p "{src_path}"'
+        # Change directory to ~/.foldersorter first so config is loaded from the right place
+        cmd_args = f'cmd.exe /c "cd /d \\"%USERPROFILE%\\.foldersorter\\" && \\"{bin_path}\\" -p \\"{src_path}\\"'
         if dest_path:
-            cmd_args += f' -o "{dest_path}"'
+            cmd_args += f' -o \\"{dest_path}\\"'
         if dry_run:
             cmd_args += ' -d'
+        cmd_args += '"'
             
         # Use appropriate schedule type based on minutes
         if minutes == 1440: # 1 Day
@@ -611,7 +619,7 @@ class SchedulerTab(tk.Frame):
             
         cmd_str = " ".join(args)
         # Suffix comment to uniquely identify our rule
-        cron_line = f"{cron_expr} cd {self.app.cli_dir} && {cmd_str} # FOLDER-SORTER-TASK\n"
+        cron_line = f"{cron_expr} cd {get_config_dir()} && {cmd_str} # FOLDER-SORTER-TASK\n"
         
         try:
             res = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
@@ -677,7 +685,8 @@ class Application(tk.Tk):
         # Paths
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.cli_dir = os.path.abspath(os.path.join(script_dir, "..", "cli"))
-        self.config_path = os.path.join(self.cli_dir, "cleaner_config.toml")
+        # Config path resides globally in ~/.foldersorter
+        self.config_path = os.path.join(get_config_dir(), "cleaner_config.toml")
         
         # Setup styles
         self.setup_styles()
@@ -909,6 +918,16 @@ class Application(tk.Tk):
         is_windows = platform.system() == "Windows"
         binary_name = "folder-sorter.exe" if is_windows else "folder-sorter"
         
+        # 0. Check PyInstaller bundle path
+        if hasattr(sys, "_MEIPASS"):
+            bundle_bin = os.path.join(sys._MEIPASS, binary_name)
+            if os.path.exists(bundle_bin):
+                try:
+                    os.chmod(bundle_bin, 0o755)
+                except Exception:
+                    pass
+                return bundle_bin
+                
         # Paths relative to gui/main.py
         release_path = os.path.abspath(os.path.join(self.cli_dir, "target", "release", binary_name))
         debug_path = os.path.abspath(os.path.join(self.cli_dir, "target", "debug", binary_name))
@@ -1021,10 +1040,10 @@ class Application(tk.Tk):
             cmd.append("-d")
 
         try:
-            # We execute it in the CLI directory so cleaner_config.toml is found
+            # We execute it in the global config directory so cleaner_config.toml is found
             process = subprocess.Popen(
                 cmd,
-                cwd=self.cli_dir,
+                cwd=get_config_dir(),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
