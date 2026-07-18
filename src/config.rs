@@ -2,10 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use crate::error::SorterError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    pub rules: HashMap<String, Vec<String>>,
+    pub(crate) rules: HashMap<String, Vec<String>>,
 }
 
 impl Default for Config {
@@ -58,16 +59,18 @@ impl Default for Config {
     }
 }
 
-pub fn load_config() -> Config {
-    let config_path = "cleaner_config.toml";
-    if Path::new(config_path).exists() {
-        let content = fs::read_to_string(config_path).expect("Не вдалося прочитати конфіг");
-        toml::from_str(&content).expect("Помилка парсингу конфігу")
+pub(crate) const CONFIG_FILE_NAME: &str = "cleaner_config.toml";
+
+pub fn load_config() -> Result<Config, SorterError> {
+    if Path::new(CONFIG_FILE_NAME).exists() {
+        let content = fs::read_to_string(CONFIG_FILE_NAME)?;
+        let config: Config = toml::from_str(&content)?;
+        Ok(config)
     } else {
         let config = Config::default();
-        let toml_string = toml::to_string(&config).unwrap();
-        fs::write(config_path, toml_string).expect("Не вдалося створити файл конфігурації");
-        println!("Створено файл конфігурації: {}", config_path);
-        config
+        let toml_string = toml::to_string(&config)?;
+        fs::write(CONFIG_FILE_NAME, toml_string)?;
+        println!("Створено файл конфігурації: {}", CONFIG_FILE_NAME);
+        Ok(config)
     }
 }

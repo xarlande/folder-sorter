@@ -1,10 +1,7 @@
+#![deny(unsafe_code)]
+
 use clap::Parser;
-
-mod config;
-mod file_organizer;
-
-use config::load_config;
-use file_organizer::organize_files;
+use folder_sorter::{load_config, organize_files};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -19,12 +16,14 @@ struct Args {
     dry_run: bool,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    let config = load_config();
+    let config = load_config()?;
 
     let source_dir = args.path;
     let target_dir = args.output.unwrap_or_else(|| source_dir.clone());
 
-    organize_files(&source_dir, &target_dir, &config, args.dry_run);
+    organize_files(&source_dir, &target_dir, &config, args.dry_run)?;
+
+    Ok(())
 }
