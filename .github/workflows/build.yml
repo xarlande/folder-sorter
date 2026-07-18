@@ -1,0 +1,53 @@
+name: Build Desktop Application
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            artifact_name: FolderSorter-macOS
+            output_path: gui/dist/FolderSorter-macOS.zip
+          - os: windows-latest
+            artifact_name: FolderSorter-Windows
+            output_path: gui/dist/FolderSorter-Windows.zip
+          - os: ubuntu-latest
+            artifact_name: FolderSorter-Linux
+            output_path: gui/dist/FolderSorter-Linux.tar.gz
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies and build Standalone App
+        run: |
+          cd gui
+          uv add pyinstaller
+          uv run build_installer.py
+        env:
+          VIRTUAL_ENV: ""
+        shell: bash
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.output_path }}
+          if-no-files-found: error
