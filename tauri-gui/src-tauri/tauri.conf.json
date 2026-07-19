@@ -1,8 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-gui",
+  "productName": "FolderSorter",
   "version": "0.1.0",
-  "identifier": "com.bohdanvelhan.tauri-gui",
+  "identifier": "com.bohdanvelhan.foldersorter",
+
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
