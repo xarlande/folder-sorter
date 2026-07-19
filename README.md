@@ -112,6 +112,18 @@ The compiled bundles will be generated in `tauri-gui/src-tauri/target/release/bu
 
 ---
 
+## 🍏 macOS Security Note (Gatekeeper)
+
+If macOS shows a prompt stating *"FolderSorter is damaged and cannot be opened"* after downloading builds from GitHub Releases, this is standard macOS Gatekeeper quarantine behavior for unsigned apps.
+
+To unblock the app, run the following command in Terminal:
+
+```bash
+xattr -cr /path/to/FolderSorter.app
+```
+
+---
+
 ## 📄 License
 
 [MIT](LICENSE)
