@@ -1,6 +1,6 @@
 # 📁 Folder Sorter
 
-**Folder Sorter** is a modern cross-platform utility for automatically organizing files into category subdirectories based on their file extensions. The project combines a high-performance **Rust CLI core engine** with a feature-rich, user-friendly **Python (Tkinter) GUI** supporting background automated task scheduling.
+**Folder Sorter** is a modern cross-platform software suite for automatically organizing files into category subdirectories based on their file extensions. The project combines a high-performance **Rust CLI core engine** with a feature-rich, user-friendly **Python (Tkinter) GUI** supporting background automated task scheduling.
 
 ---
 
@@ -10,14 +10,14 @@
 
 ## ✨ Features
 
-- ⚡ **High Performance (Rust Engine)**: Blazing-fast directory scanning and file organization with automatic filename collision indexing.
-- 🎨 **Modern Graphical Interface (Python/Tkinter)**: Elegant dark theme UI featuring dedicated tabs for folder sorting, rules management, and system scheduling.
-- ⏰ **Automated System Scheduling**: Native integration with OS background schedulers:
+- ⚡ **High Performance (Rust Core)**: Ultra-fast file scanning and relocation with automatic index suffixing for duplicate filename collisions.
+- 🎨 **Modern Graphical Interface (Python GUI)**: Elegant dark theme featuring dedicated tabs for folder sorting, rules management, and automated background scheduling.
+- ⏰ **Native OS Scheduling**: Built-in setup for system background tasks:
   - **macOS**: `launchd` (LaunchAgents)
   - **Windows**: Task Scheduler (`schtasks`)
   - **Linux**: `cron` (`crontab`)
-- 🔍 **Dry Run Mode**: Safely preview file relocations before making actual filesystem changes.
-- ⚙️ **Flexible TOML Configuration**: User-customizable rules stored globally in `~/.foldersorter/cleaner_config.toml`.
+- 🔍 **Dry Run Mode**: Safe preview mode showing all proposed filesystem modifications before applying them.
+- ⚙️ **Flexible TOML Rules**: Easily customize categories and file extension associations stored in `~/.foldersorter/cleaner_config.toml`.
 
 ---
 
@@ -26,28 +26,34 @@
 ```text
 folder-sorter/
 ├── cli/                        # High-performance Rust CLI engine
-│   ├── Cargo.toml
+│   ├── Cargo.toml              # Rust package manifest
+│   ├── README.md               # CLI English documentation
+│   ├── README_UA.md            # CLI Ukrainian documentation
 │   └── src/
-│       ├── main.rs             # CLI entry point
-│       ├── lib.rs              # File scanner and mover logic
-│       └── config.rs           # TOML configuration parser
+│       ├── main.rs             # CLI binary entry point (Clap CLI parser)
+│       ├── lib.rs              # Crate root & module exports
+│       ├── file_organizer.rs   # Scanner & file organizer engine
+│       ├── config.rs           # TOML config manager & default rules
+│       └── error.rs            # Custom error types
 ├── gui/                        # Modular Python GUI application
 │   ├── main.py                 # Application launcher entry point
-│   ├── build_installer.py      # Standalone binary builder (PyInstaller)
-│   ├── pyproject.toml / uv.lock
+│   ├── build_installer.py      # Standalone binary packager (PyInstaller)
+│   ├── README.md               # GUI English documentation
+│   ├── README_UA.md            # GUI Ukrainian documentation
+│   ├── pyproject.toml / uv.lock # Python environment lockfiles
 │   └── foldersorter/           # Modular Python package
-│       ├── config.py           # Config loader and rule persistence
-│       ├── exceptions.py       # Domain-specific error types
+│       ├── config.py           # Configuration manager & default fallbacks
+│       ├── exceptions.py       # Domain-specific custom exceptions
 │       ├── scheduler.py        # OS background scheduler integration
-│       ├── runner.py           # CLI binary discovery and Cargo builder
-│       └── ui/                 # Tkinter view modules
+│       ├── runner.py           # Cargo builder & CLI execution runner
+│       └── ui/                 # Tkinter views & custom widgets
 │           ├── app.py          # FolderSorterApp main window
 │           ├── components.py   # Reusable flat widgets (CustomButton, ScrollableFrame)
-│           ├── sorter_tab.py   # Sorting tab & live output console
+│           ├── sorter_tab.py   # Sorting tab & live console logger
 │           ├── rules_tab.py    # Category & extension editor tab
 │           └── scheduler_tab.py # Background task scheduler tab
-├── README.md                   # English documentation
-└── README_UA.md                # Ukrainian documentation
+├── README.md                   # Root English documentation
+└── README_UA.md                # Root Ukrainian documentation
 ```
 
 ---
@@ -55,10 +61,10 @@ folder-sorter/
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
-- **Rust / Cargo**: Required to build the CLI engine ([Install Rust](https://rustup.rs/)).
-- **Python 3.10+** (or [uv](https://docs.astral.sh/uv/)): Required to run the GUI.
+- **Rust / Cargo**: Required to build the CLI core engine ([Install Rust](https://rustup.rs/)).
+- **Python 3.10+** (or [uv](https://docs.astral.sh/uv/)): Required to run the GUI desktop app.
 
-### 2. Running the GUI (Python)
+### 2. Running the Desktop GUI App
 
 Using `uv`:
 ```bash
@@ -66,23 +72,23 @@ cd gui
 uv run main.py
 ```
 
-Using system `python3`:
+Using standard `python3`:
 ```bash
 cd gui
 python3 main.py
 ```
 
-> 💡 *Note: On first run, the GUI automatically builds the Rust CLI binary in the background if a compiled executable is not yet present.*
+> 💡 *Note: The GUI automatically detects and compiles the Rust CLI binary in release mode if a compiled executable is not found.*
 
 ### 3. Running the CLI directly (Rust)
 
 ```bash
 cd cli
 
-# Dry Run (preview mode)
+# Run preview mode (Dry Run)
 cargo run --release -- --path ~/Downloads --dry-run
 
-# Organize files in specified path
+# Organize files in specified directory
 cargo run --release -- --path ~/Downloads
 ```
 
@@ -96,31 +102,31 @@ Example `cleaner_config.toml`:
 
 ```toml
 [rules]
-"Images" = ["jpg", "png", "jpeg", "gif", "svg"]
-"Videos" = ["mp4", "mkv", "mov", "avi"]
-"Audio" = ["mp3", "wav", "flac"]
-"Documents" = ["pdf", "doc", "docx", "txt"]
-"Archives" = ["zip", "rar", "7z", "tar"]
-"Executables" = ["exe", "msi", "deb"]
+"Зображення" = ["jpg", "png", "jpeg", "gif", "svg"]
+"Відео" = ["mp4", "mkv", "mov", "avi"]
+"Музика" = ["mp3", "wav", "flac"]
+"Документи" = ["pdf", "doc", "docx", "txt"]
+"Архіви" = ["zip", "rar", "7z", "tar"]
+"Програми" = ["exe", "msi", "deb"]
 ```
 
-Categories and file extensions can be modified either directly in the TOML file or via the **"Rules Settings"** tab in the GUI.
+Rule categories and extension mappings can be edited directly in the file or managed graphically via the **"Rules Settings"** tab in the GUI app.
 
 ---
 
-## 📦 Building Standalone Installers (PyInstaller)
+## 📦 Standalone Installer Bundling
 
-To build standalone, single-file bundles or executable app packages (`.app` for macOS, `.exe` for Windows, executable for Linux):
+To generate single-file executables (`.app` on macOS, `.exe` on Windows, or standalone binaries on Linux):
 
 ```bash
 cd gui
 python3 build_installer.py
 ```
 
-The script automatically:
-1. Compiles the Rust CLI engine in `--release` mode.
-2. Packages the Python GUI alongside the compiled CLI binary via PyInstaller.
-3. Generates release archives inside `gui/dist/`.
+This automated script will:
+1. Compile the Rust CLI core engine in `--release` mode.
+2. Bundle the Python GUI and CLI binary into a self-contained distribution using PyInstaller.
+3. Package ready-to-use compressed archives under `gui/dist/`.
 
 ---
 

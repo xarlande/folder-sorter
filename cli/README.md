@@ -1,79 +1,88 @@
-# Folder Sorter
+# ⚡ Folder Sorter CLI
 
-A simple Rust utility for automatically sorting files into categories (Images, Videos, Documents, etc.) based on their extensions.
+High-performance command-line file organization utility written in Rust.
 
 ---
 
-[🇺🇦 Українська версія](README_UA.md)
+[🇺🇦 Українська версія](README_UA.md) | [👉 Main Documentation](../README.md)
 
-## Features
+---
 
-- **Automatic Sorting**: Organizes files into subfolders based on their extensions.
-- **Flexible Configuration**: Customize categories and extensions via a TOML file.
-- **Dry Run Mode**: Preview planned changes without actually moving files.
-- **Duplicate Handling**: Automatically adds an index to the filename if a file with the same name already exists in the destination folder.
+## ✨ Features
 
-## Installation
+- **Blazing Fast**: Compiled Rust binary designed for maximum I/O performance.
+- **Automatic Sorting**: Moves files into category subdirectories based on their file extensions.
+- **Configurable TOML Rules**: Easily customize categories and extension lists.
+- **Collision Indexing**: Automatically appends numbers `filename_1.ext` if a destination file already exists.
+- **Dry Run Mode**: Safely test and preview operations without altering files on disk.
 
-You need [Rust](https://www.rust-lang.org/) installed to build the project.
+---
+
+## 🛠️ Build & Installation
+
+Prerequisites: [Rust and Cargo](https://rustup.rs/).
 
 ```bash
-# Clone the repository and run:
+# Build release binary locally
+cargo build --release
+
+# Install binary to ~/.cargo/bin
 cargo install --path .
 ```
 
-Ensure `~/.cargo/bin` is added to your `PATH` environment variable.
+---
 
-## Usage
+## 🚀 Usage
 
 ```bash
 folder-sorter --path <DIRECTORY_PATH> [OPTIONS]
 ```
 
-### Parameters
+### Options
 
-- `-p, --path <PATH>` — Path to the directory you want to organize.
-- `-o, --output <OUTPUT>` — (Optional) Path to the directory where sorted files will be moved. Defaults to the source path.
-- `-d, --dry-run` — Run in preview mode (files will not be moved).
-- `-V, --version` — Show program version.
-- `-h, --help` — Show help message.
+- `-p, --path <PATH>` — Target directory path to organize.
+- `-o, --output <OUTPUT>` — *(Optional)* Destination directory. Defaults to source path.
+- `-d, --dry-run` — Run in preview mode without moving files.
+- `-V, --version` — Print version information.
+- `-h, --help` — Display help information.
 
 ### Examples
 
 ```bash
-# Check what will be done in the Downloads folder
+# Preview proposed changes in Downloads directory
 folder-sorter --path ~/Downloads --dry-run
 
-# Organize files in the Downloads folder
+# Organize files in Downloads directory
 folder-sorter --path ~/Downloads
 
-# Using cargo run (development)
-cargo run -- --path . --dry-run
+# Specify a custom target destination directory
+folder-sorter --path ~/Downloads --output ~/Organized
+
+# Run using Cargo during development
+cargo run --release -- --path . --dry-run
 ```
 
-## Configuration
+---
 
-On the first run, the program creates a `cleaner_config.toml` file in the current directory. You can edit it to add your own categories or extensions.
+## ⚙️ Configuration
 
-Default categories:
+On execution, the tool reads `cleaner_config.toml` from the current working directory. If missing, it creates a default configuration file.
 
-- **Images**: jpg, png, jpeg, gif, svg
-- **Video**: mp4, mkv, mov, avi
-- **Music**: mp3, wav, flac
-- **Documents**: pdf, doc, docx, txt
-- **Archives**: zip, rar, 7z, tar
-- **Apps**: exe, msi, deb
-- **Other**: All other file types
-
-Example `cleaner_config.toml`:
-
+Default rules:
 ```toml
 [rules]
-"Images" = ["jpg", "png", "jpeg", "gif", "svg"]
-"Documents" = ["pdf", "doc", "docx", "txt"]
-"Projects" = ["rs", "py", "js", "cpp"]
+"Зображення" = ["jpg", "png", "jpeg", "gif", "svg"]
+"Відео" = ["mp4", "mkv", "mov", "avi"]
+"Музика" = ["mp3", "wav", "flac"]
+"Документи" = ["pdf", "doc", "docx", "txt"]
+"Архіви" = ["zip", "rar", "7z", "tar"]
+"Програми" = ["exe", "msi", "deb"]
 ```
 
-## License
+Unrecognized extensions are automatically moved to an `"Інше"` (Other) folder.
 
-MIT
+---
+
+## 📄 License
+
+[MIT](LICENSE)
