@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 import type { TabType } from './types/sorter';
 import { createConfigStore } from './composables/useConfig';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sparkles, Sliders, Clock, Settings, FolderSync } from 'lucide-vue-next';
+import { Sparkles, Sliders, Clock, Settings, FolderSync } from '@lucide/vue';
 
 import SorterTab from './components/SorterTab.vue';
 import RulesTab from './components/RulesTab.vue';
