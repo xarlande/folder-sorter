@@ -1,3 +1,8 @@
+---
+trigger: model_decision
+description: Apply this rule whenever working with the Rust programming language, editing, creating, or analyzing files with the .rs extension.
+---
+
 # Rust Agent Constraints & Architecture Rules
 
 ## 1. Role & Core Philosophy
