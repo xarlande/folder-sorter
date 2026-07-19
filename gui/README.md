@@ -1,7 +1,7 @@
 # Folder Sorter GUI
 
-Графічний інтерфейс користувача для проекту **FolderSorter**, побудований на Python та Tkinter.
+Graphical User Interface for **FolderSorter**, built with Python and Tkinter.
 
-Детальні інструкції щодо запуску, конфігурації та збірки автономного застосунку знаходяться в головному файлі проекту:
+For full setup, configuration details, and standalone installer build instructions, please refer to the main repository documentation:
 
-👉 **[Головний README.md](../README.md)**
+👉 **[Main README.md](../README.md)**

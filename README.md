@@ -1,124 +1,124 @@
 # 📁 Folder Sorter
 
-**Folder Sorter** — це сучасний кросплатформений інструмент для автоматичного впорядкування файлів у папках за їхніми розширеннями. Проєкт поєднує високопродуктивне ядро на **Rust (CLI)** та зручний графічний інтерфейс на **Python (Tkinter GUI)** з підтримкою системного планувальника задач.
+**Folder Sorter** is a modern cross-platform utility for automatically organizing files into category subdirectories based on their file extensions. The project combines a high-performance **Rust CLI core engine** with a feature-rich, user-friendly **Python (Tkinter) GUI** supporting background automated task scheduling.
 
 ---
 
-## ✨ Основні можливості
+## ✨ Features
 
-- ⚡ **Висока швидкість (Rust Engine)**: Швидке сканування та переміщення великої кількості файлів з автоматичним розв'язанням конфліктів імен.
-- 🎨 **Сучасний GUI (Python/Tkinter)**: Зручний темний інтерфейс з розділеними вкладками для сортування, налаштування правил та керування розкладом.
-- ⏰ **Автоматизація за розкладом**: Інтеграція з нативними системними планувальниками:
+- ⚡ **High Performance (Rust Engine)**: Blazing-fast directory scanning and file organization with automatic filename collision indexing.
+- 🎨 **Modern Graphical Interface (Python/Tkinter)**: Elegant dark theme UI featuring dedicated tabs for folder sorting, rules management, and system scheduling.
+- ⏰ **Automated System Scheduling**: Native integration with OS background schedulers:
   - **macOS**: `launchd` (LaunchAgents)
   - **Windows**: Task Scheduler (`schtasks`)
   - **Linux**: `cron` (`crontab`)
-- 🔍 **Режим перевірки (Dry Run)**: Можливість безпечного перегляду запланованих змін без реального переміщення файлів.
-- ⚙️ **Гнучка конфігурація TOML**: Збереження правил та категорій у глобальній папці користувача `~/.foldersorter/cleaner_config.toml`.
+- 🔍 **Dry Run Mode**: Safely preview file relocations before making actual filesystem changes.
+- ⚙️ **Flexible TOML Configuration**: User-customizable rules stored globally in `~/.foldersorter/cleaner_config.toml`.
 
 ---
 
-## 📂 Структура проєкту
+## 📂 Repository Structure
 
 ```text
 folder-sorter/
-├── cli/                        # Високопродуктивне CLI-ядро на Rust
+├── cli/                        # High-performance Rust CLI engine
 │   ├── Cargo.toml
 │   └── src/
-│       ├── main.rs             # CLI точка входу
-│       ├── lib.rs              # Логіка сортування та сканування
-│       └── config.rs           # Парсинг TOML конфігурації
-├── gui/                        # Графічний інтерфейс на Python
-│   ├── main.py                 # Точка входу GUI
-│   ├── build_installer.py      # Скрипт збірки бінарних дистрибутивів (PyInstaller)
+│       ├── main.rs             # CLI entry point
+│       ├── lib.rs              # File scanner and mover logic
+│       └── config.rs           # TOML configuration parser
+├── gui/                        # Modular Python GUI application
+│   ├── main.py                 # Application launcher entry point
+│   ├── build_installer.py      # Standalone binary builder (PyInstaller)
 │   ├── pyproject.toml / uv.lock
-│   └── foldersorter/           # Модульний пакет Python
-│       ├── config.py           # Завантаження та збереження правил
-│       ├── exceptions.py       # Кастомні винятки
-│       ├── scheduler.py        # Інтеграція з ОС планувальниками
-│       ├── runner.py           # Пошук та компіляція CLI-бінарника
-│       └── ui/                 # Компоненти інтерфейсу
-│           ├── app.py          # Головне вікно FolderSorterApp
-│           ├── components.py   # Кастомні віджети (CustomButton, ScrollableFrame)
-│           ├── sorter_tab.py   # Вкладка сортування та лог-консоль
-│           ├── rules_tab.py    # Вкладка редагування категорій
-│           └── scheduler_tab.py # Вкладка планувальника
+│   └── foldersorter/           # Modular Python package
+│       ├── config.py           # Config loader and rule persistence
+│       ├── exceptions.py       # Domain-specific error types
+│       ├── scheduler.py        # OS background scheduler integration
+│       ├── runner.py           # CLI binary discovery and Cargo builder
+│       └── ui/                 # Tkinter view modules
+│           ├── app.py          # FolderSorterApp main window
+│           ├── components.py   # Reusable flat widgets (CustomButton, ScrollableFrame)
+│           ├── sorter_tab.py   # Sorting tab & live output console
+│           ├── rules_tab.py    # Category & extension editor tab
+│           └── scheduler_tab.py # Background task scheduler tab
 └── README.md
 ```
 
 ---
 
-## 🚀 Швидкий запуск
+## 🚀 Quick Start
 
-### 1. Вимоги до середовища
-- **Rust / Cargo**: потрібен для компіляції CLI ядра ([встановити Rust](https://rustup.rs/)).
-- **Python 3.10+** (або [uv](https://docs.astral.sh/uv/)): для запуску GUI.
+### 1. Prerequisites
+- **Rust / Cargo**: Required to build the CLI engine ([Install Rust](https://rustup.rs/)).
+- **Python 3.10+** (or [uv](https://docs.astral.sh/uv/)): Required to run the GUI.
 
-### 2. Запуск GUI (Python)
+### 2. Running the GUI (Python)
 
-За допомогою `uv`:
+Using `uv`:
 ```bash
 cd gui
 uv run main.py
 ```
 
-Або через системний `python3`:
+Using system `python3`:
 ```bash
 cd gui
 python3 main.py
 ```
 
-> 💡 *При першому запуску сортування GUI автоматично скомпілює Rust CLI у фоновому режимі, якщо готовий бінарник відсутній.*
+> 💡 *Note: On first run, the GUI automatically builds the Rust CLI binary in the background if a compiled executable is not yet present.*
 
-### 3. Прямий запуск CLI (Rust)
+### 3. Running the CLI directly (Rust)
 
 ```bash
 cd cli
 
-# Режим перевірки (Dry Run)
+# Dry Run (preview mode)
 cargo run --release -- --path ~/Downloads --dry-run
 
-# Реальне сортування файлів
+# Organize files in specified path
 cargo run --release -- --path ~/Downloads
 ```
 
 ---
 
-## ⚙️ Налаштування конфігурації
+## ⚙️ Configuration Guide
 
-Конфігурація зберігається в файлі `~/.foldersorter/cleaner_config.toml`.
+Configuration options are stored in `~/.foldersorter/cleaner_config.toml`.
 
-Приклад вмісту `cleaner_config.toml`:
+Example `cleaner_config.toml`:
 
 ```toml
 [rules]
-"Зображення" = ["jpg", "png", "jpeg", "gif", "svg"]
-"Відео" = ["mp4", "mkv", "mov", "avi"]
-"Музика" = ["mp3", "wav", "flac"]
-"Документи" = ["pdf", "doc", "docx", "txt"]
-"Архіви" = ["zip", "rar", "7z", "tar"]
-"Програми" = ["exe", "msi", "deb"]
+"Images" = ["jpg", "png", "jpeg", "gif", "svg"]
+"Videos" = ["mp4", "mkv", "mov", "avi"]
+"Audio" = ["mp3", "wav", "flac"]
+"Documents" = ["pdf", "doc", "docx", "txt"]
+"Archives" = ["zip", "rar", "7z", "tar"]
+"Executables" = ["exe", "msi", "deb"]
 ```
 
-Категорії та розширення можна легко змінювати як безпосередньо у файлі, так і через вкладку **«Налаштування правил»** у GUI.
+Categories and file extensions can be modified either directly in the TOML file or via the **"Rules Settings"** tab in the GUI.
 
 ---
 
-## 📦 Збірка автономного дистрибутива (PyInstaller)
+## 📦 Building Standalone Installers (PyInstaller)
 
-Для створення готового до розповсюдження автономного застосунку (`.app` для macOS, `.exe` для Windows або виконуваного файлу для Linux):
+To build standalone, single-file bundles or executable app packages (`.app` for macOS, `.exe` for Windows, executable for Linux):
 
 ```bash
 cd gui
 python3 build_installer.py
 ```
 
-Скрипт автоматично:
-1. Скомпілює Rust CLI у Release режимі (`cargo build --release`).
-2. Запакує Python GUI разом з CLI-бінарником через PyInstaller.
-3. Створить готові архіви у папці `gui/dist/`.
+The script automatically:
+1. Compiles the Rust CLI engine in `--release` mode.
+2. Packages the Python GUI alongside the compiled CLI binary via PyInstaller.
+3. Generates release archives inside `gui/dist/`.
 
 ---
 
-## 📄 Ліцензія
+## 📄 License
 
 [MIT](LICENSE)
