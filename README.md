@@ -61,8 +61,8 @@ folder-sorter/
 
 ```bash
 cd tauri-gui
-npm install
-npm run tauri dev
+pnpm install
+pnpm tauri dev
 ```
 
 ### 3. Running the CLI directly (Rust)
@@ -105,7 +105,7 @@ To compile and package native executable installers (`.dmg`/`.app` on macOS, `.m
 
 ```bash
 cd tauri-gui
-npm run tauri build
+pnpm tauri build
 ```
 
 The compiled bundles will be generated in `tauri-gui/src-tauri/target/release/bundle/`.

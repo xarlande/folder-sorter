@@ -61,8 +61,8 @@ folder-sorter/
 
 ```bash
 cd tauri-gui
-npm install
-npm run tauri dev
+pnpm install
+pnpm tauri dev
 ```
 
 ### 3. Прямий запуск CLI (Rust)
@@ -105,7 +105,7 @@ cargo run --release -- --path ~/Downloads
 
 ```bash
 cd tauri-gui
-npm run tauri build
+pnpm tauri build
 ```
 
 Готові збірки будуть сформовані в папці `tauri-gui/src-tauri/target/release/bundle/`.
