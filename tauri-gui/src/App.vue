@@ -1,40 +1,17 @@
-<script setup>
-import { ref, onMounted, provide } from 'vue';
-import { invoke } from '@tauri-apps/api/core';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import type { TabType } from './types/sorter';
+import { createConfigStore } from './composables/useConfig';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sparkles, Sliders, Clock, Settings, FolderSync } from 'lucide-vue-next';
 
 import SorterTab from './components/SorterTab.vue';
 import RulesTab from './components/RulesTab.vue';
 import SchedulerTab from './components/SchedulerTab.vue';
 import SettingsTab from './components/SettingsTab.vue';
 
-const activeTab = ref('sorter');
-const config = ref({ rules: {} });
-const isLoadingConfig = ref(true);
-
-const loadConfig = async () => {
-  try {
-    isLoadingConfig.value = true;
-    config.value = await invoke('get_config');
-  } catch (err) {
-    console.error('Помилка завантаження конфігурації:', err);
-  } finally {
-    isLoadingConfig.value = false;
-  }
-};
-
-const saveConfig = async () => {
-  try {
-    await invoke('save_config', { config: config.value });
-    return true;
-  } catch (err) {
-    console.error('Помилка збереження конфігурації:', err);
-    throw err;
-  }
-};
-
-provide('config', config);
-provide('loadConfig', loadConfig);
-provide('saveConfig', saveConfig);
+const activeTab = ref<TabType>('sorter');
+const { loadConfig } = createConfigStore();
 
 onMounted(() => {
   loadConfig();
@@ -42,72 +19,47 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen overflow-hidden select-none bg-[#0b0d14]">
+  <div class="flex flex-col h-screen w-screen overflow-hidden select-none bg-background text-foreground">
     <!-- Top Bar Navigation Header -->
-    <header class="flex items-center justify-between px-6 py-3.5 bg-[#0b0d14]/90 backdrop-blur-md border-b border-white/10 z-50">
+    <header class="flex items-center justify-between px-6 py-3 border-b border-border bg-card/60 backdrop-blur-md z-50">
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/30">
-          📁
+        <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-sm">
+          <FolderSync class="w-5 h-5" />
         </div>
         <div>
-          <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          <h1 class="font-bold text-base tracking-tight text-foreground">
             FolderSorter
           </h1>
-          <div class="text-[10px] text-indigo-400 font-mono tracking-wide uppercase font-semibold">Автоматичне прибирання</div>
-
+          <div class="text-[10px] text-muted-foreground font-mono tracking-wide uppercase font-medium">
+            Автоматичне прибирання
+          </div>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
-      <nav class="flex p-1 gap-1 bg-white/5 border border-white/10 rounded-xl">
-        <button
-          @click="activeTab = 'sorter'"
-          :class="[
-            'px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-2',
-            activeTab === 'sorter'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-500/50'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          ]"
-        >
-          <span>⚡</span> Сортування
-        </button>
+      <Tabs v-model="activeTab" class="w-auto">
+        <TabsList class="grid grid-cols-4 bg-muted/60 p-1 border border-border/50 rounded-xl">
+          <TabsTrigger value="sorter" class="flex items-center gap-2 text-xs font-medium transition-all">
+            <Sparkles class="w-3.5 h-3.5" />
+            <span>Сортування</span>
+          </TabsTrigger>
 
-        <button
-          @click="activeTab = 'rules'"
-          :class="[
-            'px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-2',
-            activeTab === 'rules'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-500/50'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          ]"
-        >
-          <span>🎯</span> Правила
-        </button>
+          <TabsTrigger value="rules" class="flex items-center gap-2 text-xs font-medium transition-all">
+            <Sliders class="w-3.5 h-3.5" />
+            <span>Правила</span>
+          </TabsTrigger>
 
-        <button
-          @click="activeTab = 'scheduler'"
-          :class="[
-            'px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-2',
-            activeTab === 'scheduler'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-500/50'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          ]"
-        >
-          <span>⏰</span> Планувальник
-        </button>
+          <TabsTrigger value="scheduler" class="flex items-center gap-2 text-xs font-medium transition-all">
+            <Clock class="w-3.5 h-3.5" />
+            <span>Планувальник</span>
+          </TabsTrigger>
 
-        <button
-          @click="activeTab = 'settings'"
-          :class="[
-            'px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 flex items-center gap-2',
-            activeTab === 'settings'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-500/50'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-          ]"
-        >
-          <span>⚙️</span> Налаштування
-        </button>
-      </nav>
+          <TabsTrigger value="settings" class="flex items-center gap-2 text-xs font-medium transition-all">
+            <Settings class="w-3.5 h-3.5" />
+            <span>Налаштування</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </header>
 
     <!-- Main Dynamic Content Container -->
@@ -121,3 +73,4 @@ onMounted(() => {
     </main>
   </div>
 </template>
+
