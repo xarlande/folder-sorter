@@ -4,6 +4,10 @@
 
 ---
 
+[🇺🇦 Українська версія](README_UA.md)
+
+---
+
 ## ✨ Features
 
 - ⚡ **High Performance (Rust Engine)**: Blazing-fast directory scanning and file organization with automatic filename collision indexing.
@@ -42,7 +46,8 @@ folder-sorter/
 │           ├── sorter_tab.py   # Sorting tab & live output console
 │           ├── rules_tab.py    # Category & extension editor tab
 │           └── scheduler_tab.py # Background task scheduler tab
-└── README.md
+├── README.md                   # English documentation
+└── README_UA.md                # Ukrainian documentation
 ```
 
 ---
