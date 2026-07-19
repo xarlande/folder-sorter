@@ -1,22 +1,38 @@
-<script setup>
-import { ref, inject } from 'vue';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useConfig } from '../composables/useConfig';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Folder,
+  Plus,
+  Trash2,
+  Save,
+  Loader2,
+  CheckCircle2,
+  Sliders,
+  X,
+} from '@lucide/vue';
 
-const config = inject('config');
-const saveConfig = inject('saveConfig');
-const loadConfig = inject('loadConfig');
+const { config, saveConfig } = useConfig();
 
-const newTagInputs = ref({});
-const isSaving = ref(false);
-const saveFeedback = ref('');
+const newCategoryName = ref<string>('');
+const isAddingCategory = ref<boolean>(false);
+const newTagInputs = ref<Record<string, string>>({});
+const isSaving = ref<boolean>(false);
+const saveFeedback = ref<string>('');
 
-const removeTag = (category, ext) => {
+const removeTag = (category: string, ext: string): void => {
   if (config.value.rules[category]) {
-    config.value.rules[category] = config.value.rules[category].filter(x => x !== ext);
+    config.value.rules[category] = config.value.rules[category].filter((x) => x !== ext);
   }
 };
 
-const addTag = (category) => {
-  const val = (newTagInputs.value[category] || '').trim().toLowerCase().replace(/^\./, '');
+const addTag = (category: string): void => {
+  const inputVal = newTagInputs.value[category] || '';
+  const val = inputVal.trim().toLowerCase().replace(/^\./, '');
   if (val && config.value.rules[category]) {
     if (!config.value.rules[category].includes(val)) {
       config.value.rules[category].push(val);
@@ -25,30 +41,31 @@ const addTag = (category) => {
   }
 };
 
-const addCategory = () => {
-  const name = prompt('Введіть назву нової категорії (наприклад, "Книги"):');
-  if (name && name.trim()) {
-    const catName = name.trim();
-    if (!config.value.rules[catName]) {
-      config.value.rules[catName] = [];
+const submitNewCategory = (): void => {
+  const name = newCategoryName.value.trim();
+  if (name) {
+    if (!config.value.rules[name]) {
+      config.value.rules[name] = [];
     }
+    newCategoryName.value = '';
+    isAddingCategory.value = false;
   }
 };
 
-const deleteCategory = (category) => {
-  if (confirm(`Видалити категорію "${category}"?`)) {
-    delete config.value.rules[category];
-  }
+const deleteCategory = (category: string): void => {
+  delete config.value.rules[category];
 };
 
-const handleSave = async () => {
+const handleSave = async (): Promise<void> => {
   try {
     isSaving.value = true;
     await saveConfig();
     saveFeedback.value = 'Правила успішно збережено!';
-    setTimeout(() => { saveFeedback.value = ''; }, 3000);
+    setTimeout(() => {
+      saveFeedback.value = '';
+    }, 3000);
   } catch (err) {
-    alert('Помилка збереження правил!');
+    saveFeedback.value = 'Помилка збереження правил!';
   } finally {
     isSaving.value = false;
   }
@@ -56,89 +73,130 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 animate-fadeIn">
-    <div class="glass-panel p-5 rounded-2xl flex flex-col gap-5 shadow-xl">
-      <!-- Header -->
-      <div class="flex items-center justify-between border-b border-white/10 pb-4">
-        <div>
-          <h2 class="text-sm font-semibold text-white flex items-center gap-2">
-            <span>🎯</span> Редактор категорій та розширень
-          </h2>
-          <p class="text-xs text-gray-400 mt-1">
-            Налаштуйте правила розподілу файлів за відповідними папками.
-          </p>
-        </div>
+  <div class="flex flex-col gap-6 animate-in fade-in duration-300">
+    <Card class="border-border bg-card/80 backdrop-blur-md shadow-sm">
+      <CardHeader class="pb-4 border-b border-border/60">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <Sliders class="w-5 h-5 text-primary" />
+              <CardTitle class="text-base font-semibold">Редактор категорій та розширень</CardTitle>
+            </div>
+            <CardDescription class="mt-1">
+              Налаштуйте правила розподілу файлів за відповідними папками.
+            </CardDescription>
+          </div>
 
-        <div class="flex items-center gap-3">
-          <span v-if="saveFeedback" class="text-xs text-emerald-400 font-semibold animate-pulse">
-            {{ saveFeedback }}
-          </span>
-          <button
-            @click="addCategory"
-            class="px-3.5 py-2 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs font-semibold text-white transition-all duration-150"
-          >
-            + Категорія
-          </button>
-          <button
-            @click="handleSave"
-            :disabled="isSaving"
-            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition-all duration-150 active:scale-95"
-          >
-            💾 {{ isSaving ? 'Збереження...' : 'Зберегти правила' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Rules Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
-          v-for="(extensions, category) in config.rules"
-          :key="category"
-          class="glass-card p-4 rounded-xl flex flex-col gap-3 border border-white/5 hover:border-white/10 transition-all duration-200"
-        >
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-sm text-white flex items-center gap-2">
-              📂 {{ category }}
+          <div class="flex items-center gap-3">
+            <span v-if="saveFeedback" class="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 animate-in fade-in">
+              <CheckCircle2 class="w-3.5 h-3.5" />
+              <span>{{ saveFeedback }}</span>
             </span>
-            <button
-              @click="deleteCategory(category)"
-              class="text-[11px] text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 px-2 py-0.5 rounded transition-all duration-150"
-            >
-              Видалити
-            </button>
-          </div>
 
-          <!-- Tags List -->
-          <div class="flex flex-wrap gap-1.5 min-h-[36px]">
-            <span
-              v-for="ext in extensions"
-              :key="ext"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-mono"
+            <Button
+              v-if="!isAddingCategory"
+              @click="isAddingCategory = true"
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5"
             >
-              .{{ ext }}
-              <button
-                @click="removeTag(category, ext)"
-                class="text-rose-400 hover:text-rose-300 font-bold text-xs"
-              >×</button>
-            </span>
-          </div>
+              <Plus class="w-4 h-4" />
+              <span>Категорія</span>
+            </Button>
 
-          <!-- Add Tag Input -->
-          <div class="flex gap-2 mt-1">
-            <input
-              v-model="newTagInputs[category]"
-              @keyup.enter="addTag(category)"
-              type="text"
-              placeholder="Додати розширення..."
-              class="flex-1 glass-input rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
-            />
-            <button
-              @click="addTag(category)"
-              class="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold text-white transition-all duration-150"
-            >+</button>
+            <Button
+              @click="handleSave"
+              :disabled="isSaving"
+              size="sm"
+              class="flex items-center gap-1.5 shadow-sm"
+            >
+              <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+              <Save v-else class="w-4 h-4" />
+              <span>{{ isSaving ? 'Збереження...' : 'Зберегти правила' }}</span>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+
+        <!-- Inline Form for New Category -->
+        <div v-if="isAddingCategory" class="flex items-center gap-2 pt-3 animate-in fade-in duration-200">
+          <Input
+            v-model="newCategoryName"
+            @keyup.enter="submitNewCategory"
+            type="text"
+            placeholder="Назва нової категорії (наприклад, Книги)..."
+            class="max-w-xs text-xs font-medium"
+            autoFocus
+          />
+          <Button @click="submitNewCategory" size="sm" class="flex items-center gap-1 text-xs">
+            <span>Додати</span>
+          </Button>
+          <Button @click="isAddingCategory = false" variant="ghost" size="sm" class="p-2">
+            <X class="w-4 h-4 text-muted-foreground" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent class="pt-6">
+        <!-- Rules Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card
+            v-for="(extensions, category) in config.rules"
+            :key="category"
+            class="p-4 bg-muted/20 border-border/60 flex flex-col gap-3 hover:border-border transition-all"
+          >
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-sm flex items-center gap-2 text-foreground">
+                <Folder class="w-4 h-4 text-primary" />
+                <span>{{ category }}</span>
+              </span>
+              <Button
+                @click="deleteCategory(category)"
+                variant="ghost"
+                size="sm"
+                class="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+              </Button>
+            </div>
+
+            <!-- Tags List -->
+            <div class="flex flex-wrap gap-1.5 min-h-[36px] items-center">
+              <Badge
+                v-for="ext in extensions"
+                :key="ext"
+                variant="secondary"
+                class="font-mono text-xs py-0.5 px-2 flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20"
+              >
+                <span>.{{ ext }}</span>
+                <button
+                  @click="removeTag(category, ext)"
+                  class="hover:text-destructive font-bold text-xs leading-none transition-colors"
+                >×</button>
+              </Badge>
+            </div>
+
+            <!-- Add Tag Input -->
+            <div class="flex gap-2 mt-1">
+              <Input
+                v-model="newTagInputs[category]"
+                @keyup.enter="addTag(category)"
+                type="text"
+                placeholder="Додати розширення..."
+                class="flex-1 text-xs font-mono h-8"
+              />
+              <Button
+                @click="addTag(category)"
+                variant="outline"
+                size="sm"
+                class="h-8 px-2.5"
+              >
+                <Plus class="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </CardContent>
+    </Card>
   </div>
 </template>
+

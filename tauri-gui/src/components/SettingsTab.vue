@@ -1,70 +1,77 @@
-<script setup>
-import { inject } from 'vue';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useConfig } from '../composables/useConfig';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Settings, RefreshCw, RotateCcw, FileText, CheckCircle2 } from '@lucide/vue';
 
-const loadConfig = inject('loadConfig');
-const saveConfig = inject('saveConfig');
-const config = inject('config');
+const { loadConfig, resetToDefaultConfig } = useConfig();
+const feedbackMsg = ref<string>('');
 
-const reloadConfig = async () => {
+const reloadConfig = async (): Promise<void> => {
   await loadConfig();
-  alert('Конфігурацію перезавантажено з диска.');
+  feedbackMsg.value = 'Конфігурацію перезавантажено з диска.';
+  setTimeout(() => {
+    feedbackMsg.value = '';
+  }, 3000);
 };
 
-const resetConfig = async () => {
-  if (confirm('Скинути конфігурацію до дефолтних категорій?')) {
-    config.value = {
-      rules: {
-        "Зображення": ["jpg", "png", "jpeg", "gif", "svg"],
-        "Відео": ["mp4", "mkv", "mov", "avi"],
-        "Музика": ["mp3", "wav", "flac"],
-        "Документи": ["pdf", "doc", "docx", "txt"],
-        "Архіви": ["zip", "rar", "7z", "tar"],
-        "Програми": ["exe", "msi", "deb"]
-      }
-    };
-    await saveConfig();
-    alert('Правила скинуто до дефолтних.');
-  }
+const resetConfig = async (): Promise<void> => {
+  await resetToDefaultConfig();
+  feedbackMsg.value = 'Правила скинуто до дефолтних.';
+  setTimeout(() => {
+    feedbackMsg.value = '';
+  }, 3000);
 };
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 animate-fadeIn">
-    <div class="glass-panel p-5 rounded-2xl flex flex-col gap-5 shadow-xl">
-      <div class="border-b border-white/10 pb-4">
-        <h2 class="text-sm font-semibold text-white flex items-center gap-2">
-          <span>⚙️</span> Налаштування застосунку
-        </h2>
-        <p class="text-xs text-gray-400 mt-1">
+  <div class="flex flex-col gap-6 animate-in fade-in duration-300">
+    <Card class="border-border bg-card/80 backdrop-blur-md shadow-sm">
+      <CardHeader class="pb-4 border-b border-border/60">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <Settings class="w-5 h-5 text-primary" />
+            <CardTitle class="text-base font-semibold">Налаштування застосунку</CardTitle>
+          </div>
+          <span v-if="feedbackMsg" class="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 animate-in fade-in">
+            <CheckCircle2 class="w-3.5 h-3.5" />
+            <span>{{ feedbackMsg }}</span>
+          </span>
+        </div>
+        <CardDescription class="mt-1">
           Управління файлами конфігурації та скидання налаштувань.
-        </p>
-      </div>
+        </CardDescription>
+      </CardHeader>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Шлях до файлу конфігурації (TOML):</label>
-        <input
-          type="text"
-          readonly
-          value="~/.foldersorter/cleaner_config.toml"
-          class="glass-input rounded-xl px-3.5 py-2 text-xs text-gray-300 select-text"
-        />
-      </div>
+      <CardContent class="flex flex-col gap-6 pt-6">
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <FileText class="w-3.5 h-3.5" />
+            <span>Шлях до файлу конфігурації (TOML):</span>
+          </label>
+          <Input
+            type="text"
+            readonly
+            value="~/.foldersorter/cleaner_config.toml"
+            class="font-mono text-xs select-text max-w-md bg-muted/30"
+          />
+        </div>
 
-      <div class="flex items-center gap-3 pt-2">
-        <button
-          @click="reloadConfig"
-          class="px-4 py-2.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs font-semibold text-white transition-all duration-150 active:scale-95 flex items-center gap-2"
-        >
-          <span>🔄</span> Перезавантажити з диска
-        </button>
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+          <Button @click="reloadConfig" variant="secondary" size="default" class="flex items-center gap-2">
+            <RefreshCw class="w-4 h-4" />
+            <span>Перезавантажити з диска</span>
+          </Button>
 
-        <button
-          @click="resetConfig"
-          class="px-4 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 rounded-xl text-xs font-semibold text-rose-300 transition-all duration-150 active:scale-95 flex items-center gap-2"
-        >
-          <span>⚠️</span> Скинути дефолтні правила
-        </button>
-      </div>
-    </div>
+          <Button @click="resetConfig" variant="destructive" size="default" class="flex items-center gap-2">
+            <RotateCcw class="w-4 h-4" />
+            <span>Скинути дефолтні правила</span>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   </div>
 </template>
+
