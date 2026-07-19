@@ -4,9 +4,9 @@ use std::fs;
 use std::path::Path;
 use crate::error::SorterError;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    pub(crate) rules: HashMap<String, Vec<String>>,
+    pub rules: HashMap<String, Vec<String>>,
 }
 
 impl Default for Config {
@@ -59,18 +59,35 @@ impl Default for Config {
     }
 }
 
-pub(crate) const CONFIG_FILE_NAME: &str = "cleaner_config.toml";
+pub const CONFIG_FILE_NAME: &str = "cleaner_config.toml";
 
 pub fn load_config() -> Result<Config, SorterError> {
-    if Path::new(CONFIG_FILE_NAME).exists() {
-        let content = fs::read_to_string(CONFIG_FILE_NAME)?;
+    load_config_from_path(Path::new(CONFIG_FILE_NAME))
+}
+
+pub fn load_config_from_path(path: &Path) -> Result<Config, SorterError> {
+    if path.exists() {
+        let content = fs::read_to_string(path)?;
         let config: Config = toml::from_str(&content)?;
         Ok(config)
     } else {
         let config = Config::default();
-        let toml_string = toml::to_string(&config)?;
-        fs::write(CONFIG_FILE_NAME, toml_string)?;
-        println!("Створено файл конфігурації: {}", CONFIG_FILE_NAME);
+        save_config_to_path(&config, path)?;
+        println!("Створено файл конфігурації: {:?}", path);
         Ok(config)
     }
 }
+
+pub fn save_config(config: &Config) -> Result<(), SorterError> {
+    save_config_to_path(config, Path::new(CONFIG_FILE_NAME))
+}
+
+pub fn save_config_to_path(config: &Config, path: &Path) -> Result<(), SorterError> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let toml_string = toml::to_string(config)?;
+    fs::write(path, toml_string)?;
+    Ok(())
+}
+

@@ -3,12 +3,41 @@ use crate::error::SorterError;
 use std::fs;
 use std::path::Path;
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SortAction {
+    pub file_name: String,
+    pub category: String,
+    pub from_path: String,
+    pub to_path: String,
+    pub status: String,
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SortSummary {
+    pub total_files: usize,
+    pub moved_files: usize,
+    pub dry_run: bool,
+    pub actions: Vec<SortAction>,
+}
+
 pub fn organize_files<P1: AsRef<Path>, P2: AsRef<Path>>(
     source_dir: P1,
     target_dir: P2,
     config: &Config,
     dry_run: bool,
 ) -> Result<(), SorterError> {
+    organize_files_with_summary(source_dir, target_dir, config, dry_run).map(|_| ())
+}
+
+pub fn organize_files_with_summary<P1: AsRef<Path>, P2: AsRef<Path>>(
+    source_dir: P1,
+    target_dir: P2,
+    config: &Config,
+    dry_run: bool,
+) -> Result<SortSummary, SorterError> {
     let source_path = source_dir.as_ref();
     let target_path = target_dir.as_ref();
 
@@ -18,6 +47,9 @@ pub fn organize_files<P1: AsRef<Path>, P2: AsRef<Path>>(
     println!("Починаю прибирання: {:?} -> {:?}", source_path, target_path);
 
     let entries = fs::read_dir(source_path)?;
+    let mut actions = Vec::new();
+    let mut total_files = 0;
+    let mut moved_files = 0;
 
     for entry in entries {
         let entry = entry?;
@@ -30,13 +62,30 @@ pub fn organize_files<P1: AsRef<Path>, P2: AsRef<Path>>(
                     continue;
                 }
             }
-            organize_file(&path, target_path, config, dry_run)?;
+            total_files += 1;
+            match organize_file_detailed(&path, target_path, config, dry_run) {
+                Ok(action) => {
+                    if action.status == "moved" || action.status == "dry_run" {
+                        moved_files += 1;
+                    }
+                    actions.push(action);
+                }
+                Err(e) => {
+                    eprintln!("Помилка при обробці {:?}: {}", path, e);
+                }
+            }
         }
     }
 
     println!("Прибирання завершено!");
-    Ok(())
+    Ok(SortSummary {
+        total_files,
+        moved_files,
+        dry_run,
+        actions,
+    })
 }
+
 
 pub fn organize_file<P1: AsRef<Path>, P2: AsRef<Path>>(
     file_path: P1,
@@ -44,6 +93,15 @@ pub fn organize_file<P1: AsRef<Path>, P2: AsRef<Path>>(
     config: &Config,
     dry_run: bool,
 ) -> Result<(), SorterError> {
+    organize_file_detailed(file_path, base_dir, config, dry_run).map(|_| ())
+}
+
+pub fn organize_file_detailed<P1: AsRef<Path>, P2: AsRef<Path>>(
+    file_path: P1,
+    base_dir: P2,
+    config: &Config,
+    dry_run: bool,
+) -> Result<SortAction, SorterError> {
     let file_path = file_path.as_ref();
     let base_dir = base_dir.as_ref();
 
@@ -97,20 +155,52 @@ pub fn organize_file<P1: AsRef<Path>, P2: AsRef<Path>>(
         }
     }
 
+    let file_name_str = file_name.to_string_lossy().into_owned();
+    let from_str = file_path.to_string_lossy().into_owned();
+    let to_str = destination_path.to_string_lossy().into_owned();
+
     if dry_run {
         println!(
             "[Dry Run] Буде переміщено: {:?} -> {:?}",
             file_name, destination_path
         );
+        Ok(SortAction {
+            file_name: file_name_str,
+            category: category.to_string(),
+            from_path: from_str,
+            to_path: to_str,
+            status: "dry_run".to_string(),
+            error_message: None,
+        })
     } else {
         match move_file(file_path, &destination_path) {
-            Ok(_) => println!("Переміщено: {:?} -> {:?}", file_name, destination_path),
-            Err(e) => eprintln!("Помилка переміщення {:?}: {}", file_name, e),
+            Ok(_) => {
+                println!("Переміщено: {:?} -> {:?}", file_name, destination_path);
+                Ok(SortAction {
+                    file_name: file_name_str,
+                    category: category.to_string(),
+                    from_path: from_str,
+                    to_path: to_str,
+                    status: "moved".to_string(),
+                    error_message: None,
+                })
+            }
+            Err(e) => {
+                let err_msg = e.to_string();
+                eprintln!("Помилка переміщення {:?}: {}", file_name, err_msg);
+                Ok(SortAction {
+                    file_name: file_name_str,
+                    category: category.to_string(),
+                    from_path: from_str,
+                    to_path: to_str,
+                    status: "error".to_string(),
+                    error_message: Some(err_msg),
+                })
+            }
         }
     }
-
-    Ok(())
 }
+
 
 fn move_file(from: &Path, to: &Path) -> std::io::Result<()> {
     if fs::rename(from, to).is_err() {
